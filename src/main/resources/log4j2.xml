@@ -1,0 +1,115 @@
+<Configuration status="WARN">
+    <Properties>
+        <!-- Compact, readable line: timestamp | level | thread | logger | clOrdId | message -->
+        <Property name="pattern">%d{ISO8601} %-4level [%t] %c{1.} clOrdId=%X{clOrdId} - %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- Main rolling app log (domain + curated infra) -->
+        <RollingRandomAccessFile name="App"
+                                 fileName="logs/oms.log"
+                                 filePattern="logs/oms-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${pattern}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="250 MB"/>
+                <TimeBasedTriggeringPolicy interval="1"/>
+            </Policies>
+            <DefaultRolloverStrategy max="14"/>
+        </RollingRandomAccessFile>
+
+        <!-- Audit: synchronous for durability -->
+        <RollingRandomAccessFile name="Audit"
+                                 fileName="logs/audit.log"
+                                 filePattern="logs/audit-%d{yyyy-MM-dd}-%i.log.gz"
+                                 immediateFlush="true" bufferSize="0">
+            <PatternLayout pattern="%d{ISO8601} %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <SizeBasedTriggeringPolicy size="500 MB"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+        <!-- FIX wire-only file (always on now) -->
+        <RollingRandomAccessFile name="FixWire"
+                                 fileName="logs/fixwire.log"
+                                 filePattern="logs/fixwire-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="%d{ISO8601} %replace{%msg}{[\p{Cntrl}&amp;&amp;[^\n\r\t]]}{|}%n"/>
+            <!-- Always enabled at INFO -->
+            <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="500 MB"/>
+                <TimeBasedTriggeringPolicy interval="1"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="SOR"
+                                 fileName="logs/sor.log"
+                                 filePattern="logs/sor-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="%d{ISO8601} %replace{%msg}{[\p{Cntrl}&amp;&amp;[^\n\r\t]]}{|}%n"/>
+            <!-- Always enabled at INFO -->
+            <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="500 MB"/>
+                <TimeBasedTriggeringPolicy interval="1"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+        <!-- Console for interactive development -->
+        <Console name="Console">
+            <PatternLayout pattern="%d{ISO8601} %replace{%msg}{\x{01}}{|}%n"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <!-- Your domain audit stream -->
+        <Logger name="oms.audit" level="info" additivity="false" includeLocation="false">
+            <AppenderRef ref="Audit"/>
+        </Logger>
+
+        <!-- Route ALL raw FIX wire to FixWire + Console -->
+        <Logger name="quickfixj.msg.incoming" level="info" additivity="false" includeLocation="false">
+            <AppenderRef ref="FixWire"/>
+            <!-- <AppenderRef ref="Console"/> -->
+        </Logger>
+        <Logger name="quickfixj.msg.outgoing" level="info" additivity="false" includeLocation="false">
+            <AppenderRef ref="FixWire"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- Keep useful infra notices, but drop duplicate "Received logon" lines -->
+        <Logger name="quickfixj.event" level="info" additivity="false" includeLocation="false">
+            <AppenderRef ref="App">
+                <RegexFilter regex=".*Received logon.*" onMatch="DENY" onMismatch="ACCEPT"/>
+            </AppenderRef>
+            <AppenderRef ref="Console">
+                <RegexFilter regex=".*Received logon.*" onMatch="DENY" onMismatch="ACCEPT"/>
+            </AppenderRef>
+        </Logger>
+
+        <Logger name="trader" level="info" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="App"/>
+        </Logger>
+
+        <!-- Optional dedicated FIX logger if you use it explicitly -->
+        <Logger name="oms.fix" level="info" additivity="false" includeLocation="false">
+            <AppenderRef ref="FixWire"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="io.tradecraft.sor" level="info" additivity="false" includeLocation="false">
+            <AppenderRef ref="SOR"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="sor.audit" level="info" additivity="false" includeLocation="false">
+            <AppenderRef ref="Audit"/>
+        </Logger>
+
+        <!-- Root: domain summaries + curated infra only -->
+        <Root level="info" includeLocation="false">
+            <AppenderRef ref="App"/>
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>

@@ -1,0 +1,2 @@
+# account,symbol,side,qty,ordType,price,tif,exDest,handlInst
+CLIENT123,AAPL,BUY,1000,LIMIT,189.50,DAY,XNAS,AUTO_PRIVATE

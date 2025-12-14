@@ -1,0 +1,76 @@
+package io.tradecraft.common.spi.sor.intent;
+
+import io.tradecraft.common.domain.instrument.InstrumentKey;
+import io.tradecraft.common.id.ChildClOrdId;
+import io.tradecraft.common.id.ChildId;
+import io.tradecraft.common.id.ParentId;
+import io.tradecraft.common.id.VenueId;
+import io.tradecraft.common.id.VenueOrderId;
+
+/**
+ * Represents an OMS → SOR logical intent to cancel a previously routed child order.
+ */
+public record CancelChildIntent(
+        ParentId parentId,
+        ChildId childId,
+        ChildClOrdId childClOrdId,
+        InstrumentKey instrumentKey,
+        VenueId venueId,
+        VenueOrderId venueOrderId,
+        long tsNanos
+) implements PubChildIntent {
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private ParentId parentId;
+        private ChildId childId;
+        private ChildClOrdId childClOrdId;
+        private InstrumentKey instrumentKey;
+        private VenueId venueId;
+        private VenueOrderId venueOrderId;
+        private long tsNanos;
+
+        public Builder parentId(ParentId parentId) {
+            this.parentId = parentId;
+            return this;
+        }
+
+        public Builder childId(ChildId childId) {
+            this.childId = childId;
+            return this;
+        }
+
+        public Builder childClOrdId(ChildClOrdId childClOrdId) {
+            this.childClOrdId = childClOrdId;
+            return this;
+        }
+
+        public Builder instrumentKey(InstrumentKey instrumentKey) {
+            this.instrumentKey = instrumentKey;
+            return this;
+        }
+
+        public Builder venueId(VenueId venueId) {
+            this.venueId = venueId;
+            return this;
+        }
+
+        public Builder venueOrderId(VenueOrderId venueOrderId) {
+            this.venueOrderId = venueOrderId;
+            return this;
+        }
+
+        public Builder tsNanos(long tsNanos) {
+            this.tsNanos = tsNanos;
+            return this;
+        }
+
+        public CancelChildIntent build() {
+            return new CancelChildIntent(parentId, childId, childClOrdId, instrumentKey, venueId, venueOrderId, tsNanos);
+        }
+    }
+}
+
